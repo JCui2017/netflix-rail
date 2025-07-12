@@ -137,7 +137,7 @@ if "df" not in st.session_state or refresh_button:
             st.stop()
     
     # Rerun to refresh the UI
-    st.experimental_rerun()
+    st.rerun()
 else:
     # Database is already loaded in session state
     df = st.session_state.df
@@ -188,7 +188,7 @@ with tab1:
             "IMDb Rating Range",
             min_value=min_rating,
             max_value=max_rating,
-            value=(min_rating, max_rating),
+            value=(5.9, max_rating),
             step=0.1
         )
     
