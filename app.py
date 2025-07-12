@@ -138,6 +138,7 @@ if "df" not in st.session_state or refresh_button:
     
     # Rerun to refresh the UI
     st.rerun()
+    
 else:
     # Database is already loaded in session state
     df = st.session_state.df
