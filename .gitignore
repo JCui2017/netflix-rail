@@ -1,0 +1,14 @@
+# .gitignore
+venv-shows/
+.streamlit/secrets.toml
+streaming_content_*.csv
+!streaming_content_sample.csv
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+.DS_Store
