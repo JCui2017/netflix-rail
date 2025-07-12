@@ -6,7 +6,11 @@ import plotly.express as px
 from data_fetcher import load_or_create_database
 
 # Page configuration
-st.set_page_config(page_title="Cui Family Movie/Show Explorer", layout="wide")
+st.set_page_config(
+    page_title="Chi 82 Rail", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
 # Function to get API keys
 def get_api_keys():
@@ -43,17 +47,6 @@ with st.sidebar:
     else:
         st.success("API keys loaded from secrets ✓")
     
-    # Database options
-    st.subheader("Database Options")
-    
-    max_pages = st.slider("Max Pages per Provider", min_value=2, max_value=20, value=2,
-                         help="Higher values give more results but take longer to fetch")
-    
-    force_refresh = st.checkbox("Force Refresh Database", value=False,
-                               help="Check to rebuild the database even if one exists")
-    
-    refresh_button = st.button("Refresh Database")
-    
     st.divider()
     
     # About section
@@ -70,8 +63,19 @@ with st.sidebar:
     Created with Streamlit and Python.
     """)
 
+    # Database options
+    with st.expander("Database Options"):    
+        max_pages = st.slider("Max Pages per Provider", min_value=2, max_value=20, value=2,
+                            help="Higher values give more results but take longer to fetch")
+        
+        force_refresh = st.checkbox("Force Refresh Database", value=False,
+                                help="Check to rebuild the database even if one exists")
+        
+        refresh_button = st.button("Refresh Database")
+    
+
 # Main content
-st.title("Chi 82 Movie/TV Explorer")
+st.title("Chi 82 Movie/TV Rail")
 
 # Function to display progress
 def update_progress(message, progress):
@@ -254,33 +258,61 @@ with tab1:
         col_idx = i % 3
         
         with cols[col_idx]:
-            st.markdown("---")
-            
-            # Create card with poster if available
-            if pd.notna(row["poster_path"]):
-                poster_url = f"https://image.tmdb.org/t/p/w200{row['poster_path']}"
-                st.image(poster_url, width=150)
-            
-            st.subheader(row["title"])
-            st.write(f"**Type:** {row['type']} | **Provider:** {row['provider']}")
-            
-            if pd.notna(row["imdb_rating"]) and row["imdb_rating"] != "N/A":
-                st.write(f"**IMDb Rating:** ⭐ {row['imdb_rating']}/10")
-            else:
-                st.write("**IMDb Rating:** Not available")
+            # Create a container with fixed height for each card
+            with st.container():
+                st.markdown("---")
                 
-            if pd.notna(row["genres"]):
-                st.write(f"**Genres:** {row['genres']}")
+                # Create a container for the poster with fixed height
+                poster_container = st.container()
+                with poster_container:
+                    # Create card with poster if available
+                    if pd.notna(row["poster_path"]):
+                        poster_url = f"https://image.tmdb.org/t/p/w200{row['poster_path']}"
+                        st.image(poster_url, width=150)
+                    else:
+                        # Add empty space if no poster to maintain alignment
+                        st.markdown('<div style="height: 225px;"></div>', unsafe_allow_html=True)
                 
-            if pd.notna(row["release_date"]):
-                st.write(f"**Released:** {row['release_date']}")
+                st.subheader(row["title"])
+                st.write(f"**Type:** {row['type']} | **Provider:** {row['provider']}")
                 
-            if pd.notna(row["overview"]):
-                st.write(row["overview"][:150] + "..." if len(row["overview"]) > 150 else row["overview"])
+                # Rating container with fixed height
+                rating_container = st.container()
+                with rating_container:
+                    if pd.notna(row["imdb_rating"]) and row["imdb_rating"] != "N/A":
+                        st.write(f"**IMDb Rating:** ⭐ {row['imdb_rating']}/10")
+                    else:
+                        st.write("**IMDb Rating:** Not available")
                 
-            # Links to more information
-            if pd.notna(row["imdb_id"]):
-                st.markdown(f"[View on IMDb](https://www.imdb.com/title/{row['imdb_id']})")
+                # Genre container with fixed height
+                genre_container = st.container()
+                with genre_container:
+                    if pd.notna(row["genres"]):
+                        st.caption(f"**Genres:** {row['genres']}")
+                    else:
+                        st.caption("**Genres:** Not available")
+                    
+                # Release date container with fixed height
+                date_container = st.container()
+                with date_container:
+                    if pd.notna(row["release_date"]):
+                        st.caption(f"**Released:** {row['release_date']}")
+                    else:
+                        st.caption("**Released:** Not available")
+                
+                # Overview container with fixed height
+                overview_container = st.container()
+                with overview_container:
+                    if pd.notna(row["overview"]):
+                        st.info(row["overview"][:150] + "..." if len(row["overview"]) > 150 else row["overview"])
+                    else:
+                        st.info("No description available")
+                
+                # Links container
+                if pd.notna(row["imdb_id"]):
+                    st.markdown(f"[View on IMDb](https://www.imdb.com/title/{row['imdb_id']})")
+                else:
+                    st.markdown('<div style="height: 19px;"></div>', unsafe_allow_html=True)
 
 with tab2:
     # Visualizations
