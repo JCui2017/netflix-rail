@@ -4,6 +4,9 @@ import os
 import time
 import plotly.express as px
 from data_fetcher import load_or_create_database
+# Random film picker
+import random
+
 
 # Page configuration
 st.set_page_config(
@@ -60,7 +63,7 @@ with st.sidebar:
     - Genres
     - IMDb ratings
     
-    Created with Streamlit and Python.
+    Created with Poopoo.
     """)
 
     # Database options
@@ -138,7 +141,7 @@ if "df" not in st.session_state or refresh_button:
     
     # Rerun to refresh the UI
     st.rerun()
-    
+
 else:
     # Database is already loaded in session state
     df = st.session_state.df
@@ -147,7 +150,32 @@ else:
 # Once data is loaded, show the app
 st.write(f"Database: {filename} | Total entries: {len(df)}")
 
-# Rest of your app remains the same as before...
+# Move the "Pick a Film for Me" feature here, after df is defined
+st.subheader("🎲 Feeling indecisive?")
+if st.button("Pick a Film for Me"):
+    # Use the full dataset since filtered_df might not exist yet
+    if 'df' in locals() and not df.empty:
+        selected_row = df.sample(1).iloc[0]
+        st.success(f"🎬 You should watch: **{selected_row['title']}**")
+
+        # Optionally show poster and brief info
+        if pd.notna(selected_row["poster_path"]):
+            st.image(f"https://image.tmdb.org/t/p/w300{selected_row['poster_path']}")
+
+        st.write(f"**Type:** {selected_row['type']}")
+        st.write(f"**Provider:** {selected_row['provider']}")
+        if pd.notna(selected_row["imdb_rating"]):
+            st.write(f"**IMDb Rating:** {selected_row['imdb_rating']}")
+        if pd.notna(selected_row["genres"]):
+            st.caption(f"**Genres:** {selected_row['genres']}")
+        if pd.notna(selected_row["overview"]):
+            st.info(selected_row["overview"])
+
+        if pd.notna(selected_row["imdb_id"]):
+            st.markdown(f"[View on IMDb](https://www.imdb.com/title/{selected_row['imdb_id']})")
+    else:
+        st.warning("No content available to recommend.")
+
 # Create tabs for different views
 tab1, tab2, tab3 = st.tabs(["Search & Filter", "Visualizations", "Raw Data"])
 
@@ -335,8 +363,8 @@ with tab2:
         provider_counts.columns = ["Provider", "Count"]
         
         fig = px.pie(
-            provider_counts, 
-            values="Count", 
+            provider_counts,
+            values="Count",
             names="Provider",
             title="Content Distribution by Streaming Provider"
         )
