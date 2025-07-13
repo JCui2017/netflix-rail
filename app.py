@@ -42,8 +42,7 @@ with st.sidebar:
     # Only show API key inputs if not in secrets
     if not (tmdb_api_key and omdb_api_key):
         tmdb_api_key = st.text_input("TMDB API Key", value=tmdb_api_key, type="password")
-        omdb_api_key = st.text_input("OMDB API Key", value=omdb_api_key, type="password")
-        
+        omdb_api_key = st.text_input("OMDB API Key", value=omdb_api_key, type="password")        
         # Update session state
         st.session_state.tmdb_api_key = tmdb_api_key
         st.session_state.omdb_api_key = omdb_api_key
@@ -150,136 +149,133 @@ else:
 # Once data is loaded, show the app
 st.write(f"Database: {filename} | Total entries: {len(df)}")
 
-# Move the "Pick a Film for Me" feature here, after df is defined
-st.subheader("🎲 Feeling indecisive?")
-if st.button("Pick a Film for Me"):
-    # Use the full dataset since filtered_df might not exist yet
-    if 'df' in locals() and not df.empty:
-        selected_row = df.sample(1).iloc[0]
-        st.success(f"🎬 You should watch: **{selected_row['title']}**")
+# Search and filter section
+col1, col2 = st.columns(2)
 
-        # Optionally show poster and brief info
-        if pd.notna(selected_row["poster_path"]):
-            st.image(f"https://image.tmdb.org/t/p/w300{selected_row['poster_path']}")
-
-        st.write(f"**Type:** {selected_row['type']}")
-        st.write(f"**Provider:** {selected_row['provider']}")
-        if pd.notna(selected_row["imdb_rating"]):
-            st.write(f"**IMDb Rating:** {selected_row['imdb_rating']}")
-        if pd.notna(selected_row["genres"]):
-            st.caption(f"**Genres:** {selected_row['genres']}")
-        if pd.notna(selected_row["overview"]):
-            st.info(selected_row["overview"])
-
-        if pd.notna(selected_row["imdb_id"]):
-            st.markdown(f"[View on IMDb](https://www.imdb.com/title/{selected_row['imdb_id']})")
-    else:
-        st.warning("No content available to recommend.")
-
-# Create tabs for different views
-tab1, tab2, tab3 = st.tabs(["Search & Filter", "Visualizations", "Raw Data"])
-
-# ... (include the rest of your tab code here as it was in the original app)
-with tab1:
-    # Search and filter section
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Text search
-        search_term = st.text_input("Search by Title", "")
-        
-        # Content type
-        content_type = st.multiselect(
-            "Content Type",
-            options=sorted(df["type"].unique()),
-            default=sorted(df["type"].unique())
-        )
-    
-    streaming_providers_default = [
-    'Apple TV',
-    'Netflix'
-    ]
-    with col2:
-        # Streaming providers
-        providers = st.multiselect(
-            "Streaming Providers",
-            options=sorted(df["provider"].unique()),
-            # default=sorted(df["provider"].unique())
-            default = streaming_providers_default
-        )
-        
-        # IMDb rating range
-        # Convert to numeric, replacing non-numeric values with NaN
-        df["imdb_rating_num"] = pd.to_numeric(df["imdb_rating"], errors="coerce")
-        
-        min_rating, max_rating = float(df["imdb_rating_num"].min()), float(df["imdb_rating_num"].max())
-        rating_range = st.slider(
-            "IMDb Rating Range",
-            min_value=min_rating,
-            max_value=max_rating,
-            value=(5.9, max_rating),
-            step=0.1
-        )
-    
-    # Genre selection
-    # Extract all unique genres
-    all_genres = set()
-    for genres_str in df["genres"].dropna():
-        genres = [g.strip() for g in genres_str.split(",")]
-        all_genres.update(genres)
-    
-    selected_genres = st.multiselect(
-        "Select Genres",
-        options=sorted(all_genres),
-        default=['Family']
-    )
-    
-    # Apply filters
-    filtered_df = df.copy()
-    
+with col1:
     # Text search
-    if search_term:
-        filtered_df = filtered_df[filtered_df["title"].str.contains(search_term, case=False, na=False)]
+    search_term = st.text_input("Search by Title", "")
     
     # Content type
-    if content_type:
-        filtered_df = filtered_df[filtered_df["type"].isin(content_type)]
+    content_type = st.multiselect(
+        "Content Type",
+        options=sorted(df["type"].unique()),
+        default=sorted(df["type"].unique())
+    )
+
+streaming_providers_default = [
+'Apple TV',
+'Netflix'
+]
+with col2:
+    # Streaming providers
+    providers = st.multiselect(
+        "Streaming Providers",
+        options=sorted(df["provider"].unique()),
+        # default=sorted(df["provider"].unique())
+        default = streaming_providers_default
+    )
     
-    # Providers
-    if providers:
-        filtered_df = filtered_df[filtered_df["provider"].isin(providers)]
+    # IMDb rating range
+    # Convert to numeric, replacing non-numeric values with NaN
+    df["imdb_rating_num"] = pd.to_numeric(df["imdb_rating"], errors="coerce")
     
-    # IMDb rating
-    filtered_df = filtered_df[
-        (filtered_df["imdb_rating_num"] >= rating_range[0]) & 
-        (filtered_df["imdb_rating_num"] <= rating_range[1])
-    ]
+    min_rating, max_rating = float(df["imdb_rating_num"].min()), float(df["imdb_rating_num"].max())
+    rating_range = st.slider(
+        "IMDb Rating Range",
+        min_value=min_rating,
+        max_value=max_rating,
+        value=(5.9, max_rating),
+        step=0.1
+    )
+
+# Genre selection
+# Extract all unique genres
+all_genres = set()
+for genres_str in df["genres"].dropna():
+    genres = [g.strip() for g in genres_str.split(",")]
+    all_genres.update(genres)
+
+selected_genres = st.multiselect(
+    "Select Genres",
+    options=sorted(all_genres),
+    default=['Family']
+)
+
+# Apply filters
+filtered_df = df.copy()
+
+# Text search
+if search_term:
+    filtered_df = filtered_df[filtered_df["title"].str.contains(search_term, case=False, na=False)]
+
+# Content type
+if content_type:
+    filtered_df = filtered_df[filtered_df["type"].isin(content_type)]
+
+# Providers
+if providers:
+    filtered_df = filtered_df[filtered_df["provider"].isin(providers)]
+
+# IMDb rating
+filtered_df = filtered_df[
+    (filtered_df["imdb_rating_num"] >= rating_range[0]) & 
+    (filtered_df["imdb_rating_num"] <= rating_range[1])
+]
+
+# Genres (match if any selected genre is in the genres list)
+if selected_genres:
+    genre_mask = filtered_df["genres"].apply(
+        lambda x: any(genre in str(x).split(", ") for genre in selected_genres) if pd.notna(x) else False
+    )
+    filtered_df = filtered_df[genre_mask]
     
-    # Genres (match if any selected genre is in the genres list)
-    if selected_genres:
-        genre_mask = filtered_df["genres"].apply(
-            lambda x: any(genre in str(x).split(", ") for genre in selected_genres) if pd.notna(x) else False
-        )
-        filtered_df = filtered_df[genre_mask]
+# Sort options
+sort_options = {
+    "IMDb Rating (High to Low)": ("imdb_rating_num", False),
+    "IMDb Rating (Low to High)": ("imdb_rating_num", True),
+    "Title (A-Z)": ("title", True),
+    "Title (Z-A)": ("title", False),
+    "Release Date (Newest First)": ("release_date", False),
+    "Release Date (Oldest First)": ("release_date", True),
+}
+
+sort_by = st.selectbox("Sort by", options=list(sort_options.keys()))
+sort_col, sort_asc = sort_options[sort_by]
+
+filtered_df = filtered_df.sort_values(by=sort_col, ascending=sort_asc)
     
-    # Display results
-    st.subheader(f"Results: {len(filtered_df)} items")
-    
-    # Sort options
-    sort_options = {
-        "IMDb Rating (High to Low)": ("imdb_rating_num", False),
-        "IMDb Rating (Low to High)": ("imdb_rating_num", True),
-        "Title (A-Z)": ("title", True),
-        "Title (Z-A)": ("title", False),
-        "Release Date (Newest First)": ("release_date", False),
-        "Release Date (Oldest First)": ("release_date", True),
-    }
-    
-    sort_by = st.selectbox("Sort by", options=list(sort_options.keys()))
-    sort_col, sort_asc = sort_options[sort_by]
-    
-    filtered_df = filtered_df.sort_values(by=sort_col, ascending=sort_asc)
-    
+# Display results
+st.subheader(f"Results: {len(filtered_df)} items")
+
+tab0, tab1, tab2, tab3 = st.tabs(["Random Pick", "Browse Content", "Visualizations", "Raw Data"])
+
+with tab0:
+    st.subheader("🎲 Feeling indecisive?")
+    if st.button("Pick a Film for Me", key="random_pick_tab"):
+        if not filtered_df.empty:
+            selected_row = filtered_df.sample(1).iloc[0]
+            st.success(f"🎬 You should watch: **{selected_row['title']}**")
+
+            # Optionally show poster and brief info
+            if pd.notna(selected_row["poster_path"]):
+                st.image(f"https://image.tmdb.org/t/p/w300{selected_row['poster_path']}")
+
+            st.write(f"**Type:** {selected_row['type']}")
+            st.write(f"**Provider:** {selected_row['provider']}")
+            if pd.notna(selected_row["imdb_rating"]):
+                st.write(f"**IMDb Rating:** {selected_row['imdb_rating']}")
+            if pd.notna(selected_row["genres"]):
+                st.caption(f"**Genres:** {selected_row['genres']}")
+            if pd.notna(selected_row["overview"]):
+                st.info(selected_row["overview"])
+
+            if pd.notna(selected_row["imdb_id"]):
+                st.markdown(f"[View on IMDb](https://www.imdb.com/title/{selected_row['imdb_id']})")
+            else:
+                st.warning("No content available to recommend based on your filters.")
+
+with tab1:
     # Display as cards in a grid
     cols = st.columns(3)
     
@@ -289,7 +285,6 @@ with tab1:
         with cols[col_idx]:
             # Create a container with fixed height for each card
             with st.container():
-                st.markdown("---")
                 
                 # Create a container for the poster with fixed height
                 poster_container = st.container()
@@ -304,7 +299,6 @@ with tab1:
                 
                 st.subheader(row["title"])
                 st.write(f"**Type:** {row['type']} | **Provider:** {row['provider']}")
-                
                 # Rating container with fixed height
                 rating_container = st.container()
                 with rating_container:
@@ -342,6 +336,7 @@ with tab1:
                     st.markdown(f"[View on IMDb](https://www.imdb.com/title/{row['imdb_id']})")
                 else:
                     st.markdown('<div style="height: 19px;"></div>', unsafe_allow_html=True)
+                st.markdown("---")
 
 with tab2:
     # Visualizations
